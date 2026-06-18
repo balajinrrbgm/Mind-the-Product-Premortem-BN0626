@@ -12,6 +12,7 @@ import {
 } from '../lib/score';
 import { toMarkdown } from '../lib/markdown';
 import { buildShareUrl } from '../lib/share';
+import { track, Events } from '../analytics';
 import Gauge from './Gauge';
 import RiskMatrix from './RiskMatrix';
 import { Link, Copy, Print, Refresh, ArrowLeft, Check, Flask, Skull } from './icons';
@@ -20,18 +21,12 @@ interface Props {
   pm: Premortem;
   onEdit: () => void;
   onReset: () => void;
-  onShared: () => void;
-  onCopied: () => void;
-  onPrinted: () => void;
 }
 
 export default function Report({
   pm,
   onEdit,
   onReset,
-  onShared,
-  onCopied,
-  onPrinted,
 }: Props) {
   const [copied, setCopied] = useState<'md' | 'link' | null>(null);
   const score = scorePremortem(pm);
@@ -58,16 +53,34 @@ export default function Report({
     const url = buildShareUrl(pm);
     window.history.replaceState(null, '', url);
     copy(url, 'link');
-    onShared();
+    track(Events.shareCreated, {
+      risk_count: score.riskCount,
+      exposure_score: score.exposureScore,
+      readiness_score: score.readiness,
+      covered_count: score.coveredCount,
+      has_headline: !!pm.headline.trim(),
+    });
   }
 
   function copyMarkdown() {
-    copy(toMarkdown(pm), 'md');
-    onCopied();
+    const md = toMarkdown(pm);
+    copy(md, 'md');
+    track(Events.markdownCopied, {
+      risk_count: score.riskCount,
+      exposure_score: score.exposureScore,
+      readiness_score: score.readiness,
+      covered_count: score.coveredCount,
+      markdown_length: md.length,
+    });
   }
 
   function print() {
-    onPrinted();
+    track(Events.reportPrinted, {
+      risk_count: score.riskCount,
+      exposure_score: score.exposureScore,
+      readiness_score: score.readiness,
+      covered_count: score.coveredCount,
+    });
     window.print();
   }
 
