@@ -1,6 +1,7 @@
 import type { Premortem, Risk } from '../../types';
 import { CATEGORY_META } from '../../types';
 import { exposure, exposurePct, band, BAND_META, riskiest } from '../../lib/score';
+import { track, Events } from '../../analytics';
 import StepHeader from './StepHeader';
 import RiskMatrix from '../RiskMatrix';
 import { Star, Target } from '../icons';
@@ -8,12 +9,11 @@ import { Star, Target } from '../icons';
 interface Props {
   pm: Premortem;
   setRisks: (risks: Risk[]) => void;
-  onStar: () => void;
   stepIndex: number;
   totalSteps: number;
 }
 
-export default function MapStep({ pm, setRisks, onStar, stepIndex, totalSteps }: Props) {
+export default function MapStep({ pm, setRisks, stepIndex, totalSteps }: Props) {
   const sorted = [...pm.risks].sort(
     (a, b) => exposure(b) - exposure(a) || b.impact - a.impact
   );
@@ -22,8 +22,19 @@ export default function MapStep({ pm, setRisks, onStar, stepIndex, totalSteps }:
   const highlightId = starred?.id ?? auto?.id;
 
   function star(id: string) {
+    const risk = pm.risks.find((r) => r.id === id);
     setRisks(pm.risks.map((r) => ({ ...r, starred: r.id === id ? !r.starred : false })));
-    onStar();
+    if (risk) {
+      track(Events.riskiestStarred, {
+        risk_title: risk.title,
+        risk_category: risk.category,
+        likelihood: risk.likelihood,
+        impact: risk.impact,
+        exposure_pct: exposurePct(risk),
+        is_auto_flagged: risk.id === auto?.id,
+        risk_rank: sorted.findIndex((r) => r.id === id) + 1,
+      });
+    }
   }
 
   return (

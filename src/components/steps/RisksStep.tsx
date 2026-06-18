@@ -3,6 +3,7 @@ import type { Premortem, Risk, RiskCategory } from '../../types';
 import { CATEGORY_META, CATEGORY_ORDER } from '../../types';
 import { suggestRisks } from '../../data/suggestions';
 import { uid } from '../../lib/share';
+import { track, Events } from '../../analytics';
 import StepHeader from './StepHeader';
 import RatingDots from '../RatingDots';
 import { Plus, Close, Spark } from '../icons';
@@ -10,7 +11,6 @@ import { Plus, Close, Spark } from '../icons';
 interface Props {
   pm: Premortem;
   setRisks: (risks: Risk[]) => void;
-  onSuggestionUsed: () => void;
   stepIndex: number;
   totalSteps: number;
 }
@@ -18,7 +18,6 @@ interface Props {
 export default function RisksStep({
   pm,
   setRisks,
-  onSuggestionUsed,
   stepIndex,
   totalSteps,
 }: Props) {
@@ -35,7 +34,7 @@ export default function RisksStep({
     [framingText, existingTitles]
   );
 
-  function addRisk(partial: Partial<Risk> & { title: string; category: RiskCategory }) {
+  function addRisk(partial: Partial<Risk> & { title: string; category: RiskCategory }, source: string = 'manual') {
     const risk: Risk = {
       id: uid(),
       likelihood: 3,
@@ -43,6 +42,14 @@ export default function RisksStep({
       ...partial,
     };
     setRisks([...pm.risks, risk]);
+    track(Events.riskAdded, {
+      category: risk.category,
+      source,
+      title_length: risk.title.length,
+      risk_count_after: pm.risks.length + 1,
+      likelihood: risk.likelihood,
+      impact: risk.impact,
+    });
   }
 
   function addDraft() {
@@ -57,7 +64,15 @@ export default function RisksStep({
   }
 
   function removeRisk(id: string) {
+    const removed = pm.risks.find((r) => r.id === id);
     setRisks(pm.risks.filter((r) => r.id !== id));
+    if (removed) {
+      track(Events.riskRemoved, {
+        category: removed.category,
+        risk_count_after: pm.risks.length - 1,
+        had_experiment: !!removed.experiment && removed.experiment.trim().length > 0,
+      });
+    }
   }
 
   const grouped = CATEGORY_ORDER.map((cat) => ({
@@ -126,8 +141,14 @@ export default function RisksStep({
                       category: s.category,
                       likelihood: s.likelihood,
                       impact: s.impact,
+                    }, 'suggestion');
+                    track(Events.suggestionUsed, {
+                      suggestion_title: s.title,
+                      category: s.category,
+                      likelihood: s.likelihood,
+                      impact: s.impact,
+                      risk_count_after: pm.risks.length + 1,
                     });
-                    onSuggestionUsed();
                   }}
                 >
                   <Plus width={12} height={12} />

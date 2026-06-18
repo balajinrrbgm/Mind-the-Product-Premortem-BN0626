@@ -2,13 +2,13 @@ import type { Premortem, Risk } from '../../types';
 import { CATEGORY_META } from '../../types';
 import { experimentsFor } from '../../data/experiments';
 import { exposure, exposurePct, band, BAND_META } from '../../lib/score';
+import { track, Events } from '../../analytics';
 import StepHeader from './StepHeader';
 import { Flask, Check } from '../icons';
 
 interface Props {
   pm: Premortem;
   setRisks: (risks: Risk[]) => void;
-  onExperimentPicked: () => void;
   stepIndex: number;
   totalSteps: number;
 }
@@ -16,7 +16,6 @@ interface Props {
 export default function DeriskStep({
   pm,
   setRisks,
-  onExperimentPicked,
   stepIndex,
   totalSteps,
 }: Props) {
@@ -26,8 +25,23 @@ export default function DeriskStep({
   );
 
   function setExperiment(id: string, experiment: string) {
+    const risk = pm.risks.find((r) => r.id === id);
     setRisks(pm.risks.map((r) => (r.id === id ? { ...r, experiment } : r)));
-    onExperimentPicked();
+    const isDeselect = experiment === '';
+    const coveredAfter = pm.risks.filter((r) => {
+      if (r.id === id) return experiment.trim().length > 0;
+      return !!r.experiment && r.experiment.trim().length > 0;
+    }).length;
+    if (risk) {
+      track(Events.experimentPicked, {
+        experiment_name: isDeselect ? (risk.experiment || '') : experiment,
+        risk_title: risk.title,
+        risk_category: risk.category,
+        risk_exposure_pct: exposurePct(risk),
+        is_deselect: isDeselect,
+        covered_count_after: coveredAfter,
+      });
+    }
   }
 
   return (

@@ -3,6 +3,7 @@ import type { Premortem, Risk } from './types';
 import { loadLocal, saveLocal, clearLocal, decodeFromHash } from './lib/share';
 import { examplePremortem } from './data/example';
 import { initAnalytics, track, Events } from './analytics';
+import { scorePremortem } from './lib/score';
 import Hero from './components/Hero';
 import Stepper from './components/Stepper';
 import type { StepDef } from './components/Stepper';
@@ -55,7 +56,14 @@ export default function App() {
       setPm(shared);
       setView('report');
       setMaxReached(STEPS.length - 1);
-      track(Events.reportReached, { source: 'share_link' });
+      const s = scorePremortem(shared);
+      track(Events.reportReached, {
+        source: 'share_link',
+        risk_count: s.riskCount,
+        covered_count: s.coveredCount,
+        categories_covered: s.categoriesCovered,
+        exposure_score: s.exposureScore,
+      });
       return;
     }
     const local = loadLocal();
@@ -81,20 +89,26 @@ export default function App() {
     (i: number) => {
       setStep(i);
       setMaxReached((m) => Math.max(m, i));
-      track(Events.stepViewed, { step: STEPS[i]?.key });
+      track(Events.stepViewed, {
+        step: STEPS[i]?.key,
+        step_index: i,
+        max_reached: Math.max(maxReached, i),
+        risk_count: pm.risks.length,
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    []
+    [maxReached, pm.risks.length]
   );
 
   function startBlank() {
+    const hadPrevious = pm.name.trim().length > 0 || pm.risks.length > 0;
     const fresh = blankPremortem();
     setPm(fresh);
     clearLocal();
     setView('flow');
     setStep(0);
     setMaxReached(0);
-    track(Events.startPremortem, { source: 'cta' });
+    track(Events.startPremortem, { source: 'cta', had_previous_session: hadPrevious });
     window.scrollTo({ top: 0 });
   }
 
@@ -102,11 +116,12 @@ export default function App() {
     setPm(examplePremortem());
     setView('report');
     setMaxReached(STEPS.length - 1);
-    track(Events.loadedExample);
+    track(Events.loadedExample, { source: 'landing' });
     window.scrollTo({ top: 0 });
   }
 
   function reset() {
+    const prevScore = scorePremortem(pm);
     const fresh = blankPremortem();
     setPm(fresh);
     clearLocal();
@@ -114,7 +129,11 @@ export default function App() {
     setView('flow');
     setStep(0);
     setMaxReached(0);
-    track(Events.reset);
+    track(Events.reset, {
+      previous_risk_count: prevScore.riskCount,
+      previous_covered_count: prevScore.coveredCount,
+      previous_exposure_score: prevScore.exposureScore,
+    });
     window.scrollTo({ top: 0 });
   }
 
@@ -122,9 +141,16 @@ export default function App() {
     if (step < STEPS.length - 1) {
       goToStep(step + 1);
     } else {
+      const s = scorePremortem(pm);
       setView('report');
       setMaxReached(STEPS.length - 1);
-      track(Events.reportReached, { source: 'flow' });
+      track(Events.reportReached, {
+        source: 'flow',
+        risk_count: s.riskCount,
+        covered_count: s.coveredCount,
+        categories_covered: s.categoriesCovered,
+        exposure_score: s.exposureScore,
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -199,7 +225,6 @@ export default function App() {
               <RisksStep
                 pm={pm}
                 setRisks={setRisks}
-                onSuggestionUsed={() => track(Events.suggestionUsed)}
                 stepIndex={3}
                 totalSteps={STEPS.length}
               />
@@ -208,7 +233,6 @@ export default function App() {
               <MapStep
                 pm={pm}
                 setRisks={setRisks}
-                onStar={() => track(Events.riskiestStarred)}
                 stepIndex={4}
                 totalSteps={STEPS.length}
               />
@@ -217,7 +241,6 @@ export default function App() {
               <DeriskStep
                 pm={pm}
                 setRisks={setRisks}
-                onExperimentPicked={() => track(Events.experimentPicked)}
                 stepIndex={5}
                 totalSteps={STEPS.length}
               />
@@ -255,9 +278,6 @@ export default function App() {
                 window.scrollTo({ top: 0 });
               }}
               onReset={reset}
-              onShared={() => track(Events.shareCreated)}
-              onCopied={() => track(Events.markdownCopied)}
-              onPrinted={() => track(Events.reportPrinted)}
             />
           </div>
         )}
