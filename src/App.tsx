@@ -3,6 +3,7 @@ import type { Premortem, Risk } from './types';
 import { loadLocal, saveLocal, clearLocal, decodeFromHash } from './lib/share';
 import { examplePremortem } from './data/example';
 import { initAnalytics, track, Events } from './analytics';
+import { scorePremortem } from './lib/score';
 import Hero from './components/Hero';
 import Stepper from './components/Stepper';
 import type { StepDef } from './components/Stepper';
@@ -55,7 +56,17 @@ export default function App() {
       setPm(shared);
       setView('report');
       setMaxReached(STEPS.length - 1);
-      track(Events.reportReached, { source: 'share_link' });
+      const sharedScore = scorePremortem(shared);
+      track(Events.reportReached, {
+        source: 'share_link',
+        risk_count: shared.risks.length,
+        categories_covered: sharedScore.categoriesCovered,
+        exposure_score: sharedScore.exposureScore,
+        readiness_score: sharedScore.readiness,
+        covered_count: sharedScore.coveredCount,
+        blind_spots_count: sharedScore.blindSpots.length,
+        has_headline: !!shared.headline?.trim(),
+      });
       return;
     }
     const local = loadLocal();
@@ -79,34 +90,53 @@ export default function App() {
 
   const goToStep = useCallback(
     (i: number) => {
+      const direction = i > step ? 'forward' : i < step ? 'backward' : 'same';
+      const isFirstVisit = i > maxReached;
       setStep(i);
       setMaxReached((m) => Math.max(m, i));
-      track(Events.stepViewed, { step: STEPS[i]?.key });
+      track(Events.stepViewed, {
+        step: STEPS[i]?.key,
+        step_index: i,
+        is_first_visit: isFirstVisit,
+        risk_count: pm.risks.length,
+        direction,
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    []
+    [step, maxReached, pm.risks.length]
   );
 
   function startBlank() {
+    const hadAutosave = !!loadLocal();
     const fresh = blankPremortem();
     setPm(fresh);
     clearLocal();
     setView('flow');
     setStep(0);
     setMaxReached(0);
-    track(Events.startPremortem, { source: 'cta' });
+    track(Events.startPremortem, {
+      source: 'cta',
+      had_existing_autosave: hadAutosave,
+      referrer: document.referrer || 'direct',
+    });
     window.scrollTo({ top: 0 });
   }
 
   function startExample() {
-    setPm(examplePremortem());
+    const hadAutosave = !!loadLocal();
+    const example = examplePremortem();
+    setPm(example);
     setView('report');
     setMaxReached(STEPS.length - 1);
-    track(Events.loadedExample);
+    track(Events.loadedExample, {
+      example_name: example.name,
+      had_existing_autosave: hadAutosave,
+    });
     window.scrollTo({ top: 0 });
   }
 
   function reset() {
+    const prevScore = scorePremortem(pm);
     const fresh = blankPremortem();
     setPm(fresh);
     clearLocal();
@@ -114,7 +144,13 @@ export default function App() {
     setView('flow');
     setStep(0);
     setMaxReached(0);
-    track(Events.reset);
+    track(Events.reset, {
+      previous_risk_count: pm.risks.length,
+      previous_exposure_score: prevScore.exposureScore,
+      previous_readiness_score: prevScore.readiness,
+      previous_covered_count: prevScore.coveredCount,
+      steps_completed: maxReached + 1,
+    });
     window.scrollTo({ top: 0 });
   }
 
@@ -122,9 +158,19 @@ export default function App() {
     if (step < STEPS.length - 1) {
       goToStep(step + 1);
     } else {
+      const score = scorePremortem(pm);
       setView('report');
       setMaxReached(STEPS.length - 1);
-      track(Events.reportReached, { source: 'flow' });
+      track(Events.reportReached, {
+        source: 'flow',
+        risk_count: pm.risks.length,
+        categories_covered: score.categoriesCovered,
+        exposure_score: score.exposureScore,
+        readiness_score: score.readiness,
+        covered_count: score.coveredCount,
+        blind_spots_count: score.blindSpots.length,
+        has_headline: !!pm.headline.trim(),
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -199,7 +245,6 @@ export default function App() {
               <RisksStep
                 pm={pm}
                 setRisks={setRisks}
-                onSuggestionUsed={() => track(Events.suggestionUsed)}
                 stepIndex={3}
                 totalSteps={STEPS.length}
               />
@@ -208,7 +253,6 @@ export default function App() {
               <MapStep
                 pm={pm}
                 setRisks={setRisks}
-                onStar={() => track(Events.riskiestStarred)}
                 stepIndex={4}
                 totalSteps={STEPS.length}
               />
@@ -217,7 +261,6 @@ export default function App() {
               <DeriskStep
                 pm={pm}
                 setRisks={setRisks}
-                onExperimentPicked={() => track(Events.experimentPicked)}
                 stepIndex={5}
                 totalSteps={STEPS.length}
               />
@@ -255,9 +298,6 @@ export default function App() {
                 window.scrollTo({ top: 0 });
               }}
               onReset={reset}
-              onShared={() => track(Events.shareCreated)}
-              onCopied={() => track(Events.markdownCopied)}
-              onPrinted={() => track(Events.reportPrinted)}
             />
           </div>
         )}

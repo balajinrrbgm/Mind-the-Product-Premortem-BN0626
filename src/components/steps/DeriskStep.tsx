@@ -2,13 +2,13 @@ import type { Premortem, Risk } from '../../types';
 import { CATEGORY_META } from '../../types';
 import { experimentsFor } from '../../data/experiments';
 import { exposure, exposurePct, band, BAND_META } from '../../lib/score';
+import { track, Events } from '../../analytics';
 import StepHeader from './StepHeader';
 import { Flask, Check } from '../icons';
 
 interface Props {
   pm: Premortem;
   setRisks: (risks: Risk[]) => void;
-  onExperimentPicked: () => void;
   stepIndex: number;
   totalSteps: number;
 }
@@ -16,7 +16,6 @@ interface Props {
 export default function DeriskStep({
   pm,
   setRisks,
-  onExperimentPicked,
   stepIndex,
   totalSteps,
 }: Props) {
@@ -27,7 +26,6 @@ export default function DeriskStep({
 
   function setExperiment(id: string, experiment: string) {
     setRisks(pm.risks.map((r) => (r.id === id ? { ...r, experiment } : r)));
-    onExperimentPicked();
   }
 
   return (
@@ -82,7 +80,16 @@ export default function DeriskStep({
                       <button
                         key={e.name}
                         title={`${e.how} (signal: ${e.signal})`}
-                        onClick={() => setExperiment(r.id, active ? '' : plan)}
+                        onClick={() => {
+                          setExperiment(r.id, active ? '' : plan);
+                          track(Events.experimentPicked, {
+                            experiment_name: e.name,
+                            risk_category: r.category,
+                            risk_exposure: exposurePct(r),
+                            effort_level: e.effort,
+                            is_deselect: active,
+                          });
+                        }}
                         className={[
                           'chip',
                           active
