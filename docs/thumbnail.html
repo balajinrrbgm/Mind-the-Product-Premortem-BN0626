@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1200px; height: 630px; }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background: #0c0a09;
+        color: #faf7f2;
+        overflow: hidden;
+        position: relative;
+      }
+      .frame { width: 1200px; height: 630px; padding: 64px 72px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+      .glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.5; }
+      .glow.ember { width: 560px; height: 560px; background: #f95816; right: -160px; top: -200px; opacity: 0.35; }
+      .glow.sage { width: 420px; height: 420px; background: #3d8463; left: -140px; bottom: -180px; opacity: 0.32; }
+      .top { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; }
+      .brand { display: flex; align-items: center; gap: 16px; }
+      .logo { width: 56px; height: 56px; background: #faf7f2; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+      .brand .name { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; }
+      .badge { font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: #f95816; border: 1px solid #292524; padding: 10px 18px; border-radius: 999px; }
+      .mid { position: relative; z-index: 2; }
+      .kicker { font-family: 'JetBrains Mono', monospace; font-size: 16px; letter-spacing: 0.16em; text-transform: uppercase; color: #a8a29e; margin-bottom: 22px; }
+      h1 { font-family: 'Fraunces', Georgia, serif; font-size: 88px; line-height: 0.98; font-weight: 600; letter-spacing: -0.02em; }
+      h1 .ember { color: #f95816; }
+      .lead { margin-top: 28px; font-size: 26px; line-height: 1.4; color: #d6d3d1; max-width: 30ch; }
+      .bottom { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; }
+      .lenses { display: flex; gap: 12px; }
+      .pill { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 500; color: #e7e5e4; background: #1c1917; border: 1px solid #292524; padding: 10px 16px; border-radius: 999px; }
+      .dot { width: 11px; height: 11px; border-radius: 50%; }
+      .d1 { background: #f95816; } .d2 { background: #8b5cf6; } .d3 { background: #0ea5e9; } .d4 { background: #3d8463; }
+      .tag { font-family: 'JetBrains Mono', monospace; font-size: 16px; letter-spacing: 0.08em; color: #f95816; }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="glow ember"></div>
+      <div class="glow sage"></div>
+
+      <div class="top">
+        <div class="brand">
+          <span class="logo">
+            <svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true">
+              <path d="M20 44 L32 18 L44 44" fill="none" stroke="#f95816" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="32" cy="40" r="4" fill="#5fa37f" />
+            </svg>
+          </span>
+          <span class="name">Premortem</span>
+        </div>
+        <span class="badge">World Product Day 2026</span>
+      </div>
+
+      <div class="mid">
+        <p class="kicker">The 10-minute pre-mortem for people who ship</p>
+        <h1>Kill your idea<br />before it kills<br />your <span class="ember">roadmap.</span></h1>
+        <p class="lead">Surface, map &amp; de-risk your riskiest assumptions — before you build a thing.</p>
+      </div>
+
+      <div class="bottom">
+        <div class="lenses">
+          <span class="pill"><span class="dot d1"></span>Desirability</span>
+          <span class="pill"><span class="dot d2"></span>Usability</span>
+          <span class="pill"><span class="dot d3"></span>Feasibility</span>
+          <span class="pill"><span class="dot d4"></span>Viability</span>
+        </div>
+        <span class="tag">#EveryoneShipsNow</span>
+      </div>
+    </div>
+  </body>
+</html>

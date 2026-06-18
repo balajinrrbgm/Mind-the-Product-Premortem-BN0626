@@ -37,6 +37,69 @@ flips the room. Premortem turns that exercise into something you can run solo,
 6. **Report** — an exposure + readiness score, a shareable report, copy-to-Markdown,
    and print-to-PDF.
 
+## Architecture
+
+Premortem is a **zero-backend, client-side SPA**. All logic, scoring, persistence,
+and sharing happen in the browser — the only external calls are static fonts and the
+Novus (Pendo) analytics agent. The full diagrams (system + data lifecycle) live in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+```mermaid
+flowchart TB
+    user([👤 User / a stranger on the URL])
+
+    subgraph browser["🌐 Browser — Static SPA (React + TS + Vite)"]
+        direction TB
+
+        subgraph ui["UI layer — components"]
+            hero["Hero / Landing"]
+            stepper["Stepper (5 steps)"]
+            steps["Frame · Imagine · Surface · Prioritise · De-risk"]
+            matrix["RiskMatrix (custom SVG) · Gauge · RatingDots"]
+            report["Report (score + share + export)"]
+        end
+
+        subgraph state["App state — App.tsx"]
+            pm["Premortem model\n(name, bet, headline, risks[])"]
+        end
+
+        subgraph libs["Logic layer — pure functions (src/lib)"]
+            score["score.ts\nexposure · readiness · riskiest"]
+            share["share.ts\nbase64 encode/decode"]
+            md["markdown.ts\nreport → Markdown"]
+        end
+
+        subgraph data["Offline knowledge (src/data)"]
+            suggestions["suggestions.ts\nkeyword-triggered risk library"]
+            experiments["experiments.ts\nexperiment toolbox"]
+        end
+
+        analytics["analytics.ts\ntyped Novus event wrapper"]
+    end
+
+    subgraph persistence["💾 Persistence — no database"]
+        ls[("localStorage\nautosave")]
+        hash[("URL #hash\nshareable state")]
+    end
+
+    novus["📊 Novus.ai (Pendo)"]
+
+    user --> ui
+    ui <--> state
+    state --> score
+    state --> share
+    state --> md
+    steps --> suggestions
+    steps --> experiments
+
+    state -- "autosave / restore" --> ls
+    share -- "encode / decode" --> hash
+    hash -- "share link opens report" --> state
+
+    ui -- "events" --> analytics
+    analytics --> novus
+```
+
 ### Crafted to be genuinely shippable
 
 - **Zero backend.** Everything runs client-side. A stranger can land on the URL and
@@ -52,6 +115,12 @@ flips the room. Premortem turns that exercise into something you can run solo,
 - Tailwind CSS (custom design system)
 - Custom SVG risk-matrix visualisation (no chart dependency)
 - **Novus.ai** (Pendo) analytics — required for the hackathon
+
+## Project docs
+
+- [`docs/pitch-deck.html`](docs/pitch-deck.html) — 12-slide pitch deck (open in a browser; print to PDF)
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system + data-lifecycle diagrams and key decisions
+- [`DEVPOST.md`](DEVPOST.md) — full Devpost submission write-up
 
 ## Run locally
 
