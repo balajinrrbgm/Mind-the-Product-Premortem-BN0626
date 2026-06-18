@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Primary meta tags -->
+    <title>Premortem — Kill your idea before it kills your roadmap</title>
+    <meta
+      name="description"
+      content="The 10-minute pre-mortem for people who ship. Surface, map, and de-risk your riskiest product assumptions before you build a single thing."
+    />
+    <meta name="theme-color" content="#0c0a09" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Premortem — Kill your idea before it kills your roadmap" />
+    <meta
+      property="og:description"
+      content="The 10-minute pre-mortem for people who ship. Surface, map, and de-risk your riskiest assumptions before you build."
+    />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- ============================================================= -->
+    <!--  NOVUS.AI  ANALYTICS  (required for hackathon submission)      -->
+    <!--                                                                -->
+    <!--  Novus is built on Pendo. Paste your Novus API key below in    -->
+    <!--  place of YOUR_NOVUS_API_KEY, then redeploy. The wrapper in    -->
+    <!--  src/analytics.ts sends custom "pre-mortem" product events.    -->
+    <!--  Install docs: https://novus.ai/                               -->
+    <!-- ============================================================= -->
+    <script>
+      (function (apiKey) {
+        (function (p, e, n, d, o) {
+          var v, w, x, y, z;
+          o = p[d] = p[d] || {};
+          o._q = o._q || [];
+          v = ['initialize', 'identify', 'updateOptions', 'pageLoad', 'track'];
+          for (w = 0, x = v.length; w < x; ++w)
+            (function (m) {
+              o[m] =
+                o[m] ||
+                function () {
+                  o._q[m === v[0] ? 'unshift' : 'push'](
+                    [m].concat([].slice.call(arguments, 0))
+                  );
+                };
+            })(v[w]);
+          y = e.createElement(n);
+          y.async = !0;
+          y.src = 'https://cdn.pendo.io/agent/static/' + apiKey + '/pendo.js';
+          z = e.getElementsByTagName(n)[0];
+          z.parentNode.insertBefore(y, z);
+        })(window, document, 'script', 'pendo');
+      })('YOUR_NOVUS_API_KEY');
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
